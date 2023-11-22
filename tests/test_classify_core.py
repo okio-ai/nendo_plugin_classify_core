@@ -1,0 +1,65 @@
+# -*- encoding: utf-8 -*-
+"""Tests for the Nendo classify core plugin."""
+from nendo import Nendo, NendoConfig
+
+import unittest
+
+nd = Nendo(
+    config=NendoConfig(
+        log_level="INFO",
+        max_threads=1,
+        plugins=["nendo_plugin_classify_core"],
+    ),
+)
+
+
+class ClassifyPluginTests(unittest.TestCase):
+    def test_run_classify_plugin(self):
+        nd.library.reset(force=True)
+        track = nd.library.add_track(file_path="tests/assets/test.wav")
+        nd.plugins.classify_core(track=track)
+        self.assertEqual(
+            len(track.get_plugin_data(plugin_name="nendo_plugin_classify_core")), 9,
+        )
+        key_data = track.get_plugin_data(
+            plugin_name="nendo_plugin_classify_core", key="key",
+        )
+        self.assertEqual(len(key_data), 1)
+        self.assertEqual(key_data[0].value, "D")
+        tempo_data = nd.library.filter_tracks(
+            filters={"tempo": (170, 180)},
+            plugin_names=["nendo_plugin_classify_core"],
+        )
+        self.assertEqual(len(tempo_data), 1)
+        tempo_data = nd.library.filter_tracks(
+            filters={"key": "C"},
+            plugin_names=["nendo_plugin_classify_core"],
+        )
+        self.assertEqual(len(tempo_data), 0)
+
+    def test_run_process_classify_plugin(self):
+        nd.library.reset(force=True)
+        track = nd.library.add_track(file_path="tests/assets/test.wav")
+        track.process("nendo_plugin_classify_core")
+        self.assertEqual(
+            len(track.get_plugin_data(plugin_name="nendo_plugin_classify_core")), 9,
+        )
+        key_data = track.get_plugin_data(
+            plugin_name="nendo_plugin_classify_core", key="key",
+        )
+        self.assertEqual(len(key_data), 1)
+        self.assertEqual(key_data[0].value, "D")
+        tempo_data = nd.library.filter_tracks(
+            filters={"tempo": (170, 180)},
+            plugin_names=["nendo_plugin_classify_core"],
+        )
+        self.assertEqual(len(tempo_data), 1)
+        tempo_data = nd.library.filter_tracks(
+            filters={"key": "C"},
+            plugin_names=["nendo_plugin_classify_core"],
+        )
+        self.assertEqual(len(tempo_data), 0)
+
+
+if __name__ == "__main__":
+    unittest.main()

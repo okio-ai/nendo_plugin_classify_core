@@ -1,0 +1,5 @@
+site_name: Classify Core
+
+nav:
+    - "index.md"
+    - Advanced Usage: "advanced.md"
