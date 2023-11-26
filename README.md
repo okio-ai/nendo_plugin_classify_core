@@ -44,7 +44,7 @@ nd = Nendo(config=NendoConfig(plugins=["nendo_plugin_classify_core"]))
 
 track = nd.library.add_track(file_path='/path/to/track.mp3')
 
-track = nd.plugins.classify_core(track)
+track = nd.plugins.classify_core(track=track)
 
 data = track.get_plugin_data(plugin_name="nendo_plugin_classify_core")
 print(data)
