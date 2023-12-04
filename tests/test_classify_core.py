@@ -37,7 +37,7 @@ class ClassifyPluginTests(unittest.TestCase):
             key="key",
         )
         self.assertEqual(len(key_data), 1)
-        self.assertEqual(key_data, "D")
+        self.assertEqual(key_data[0].value, "D")
 
         tempo_data = nd.library.filter_tracks(
             filters={"tempo": (170, 180)},
@@ -55,19 +55,19 @@ class ClassifyPluginTests(unittest.TestCase):
             plugin_name="nendo_plugin_classify_core",
             key="instruments",
         )
-        self.assertIn("synthesizer", instrument_data)
+        self.assertIn("synthesizer", instrument_data[0].value)
 
         genre_data = track.get_plugin_data(
             plugin_name="nendo_plugin_classify_core",
             key="genres",
         )
-        self.assertIn("Electronic", genre_data)
+        self.assertIn("Electronic", genre_data[0].value)
 
         mood_data = track.get_plugin_data(
             plugin_name="nendo_plugin_classify_core",
             key="moods",
         )
-        self.assertIn("slow", mood_data)
+        self.assertIn("slow", mood_data[0].value)
 
 
 if __name__ == "__main__":

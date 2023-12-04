@@ -1,14 +1,18 @@
+"""Settings used to configure the nendo classifier plugin."""
 from typing import List
 
 from nendo import NendoConfig
+from pydantic import Field
 
 
 class ClassifyCoreConfig(NendoConfig):
-    embedding_model: str = "https://essentia.upf.edu/models/feature-extractors/discogs-effnet/discogs-effnet-bs64-1.pb"
-    mood_model: str = "https://essentia.upf.edu/models/classification-heads/mtg_jamendo_moodtheme/mtg_jamendo_moodtheme-discogs-effnet-1.pb"
-    genre_model: str = "https://essentia.upf.edu/models/classification-heads/genre_discogs400/genre_discogs400-discogs-effnet-1.pb"
-    instrument_model: str = "https://essentia.upf.edu/models/classification-heads/mtg_jamendo_instrument/mtg_jamendo_instrument-discogs-effnet-1.pb"
-    instrument_classes: List[str] = [
+    """Configuration class for the nendo classifier plugin."""
+
+    embedding_model: str = Field(default="https://essentia.upf.edu/models/feature-extractors/discogs-effnet/discogs-effnet-bs64-1.pb")
+    mood_model: str = Field(default="https://essentia.upf.edu/models/classification-heads/mtg_jamendo_moodtheme/mtg_jamendo_moodtheme-discogs-effnet-1.pb")
+    genre_model: str = Field(default="https://essentia.upf.edu/models/classification-heads/genre_discogs400/genre_discogs400-discogs-effnet-1.pb")
+    instrument_model: str = Field(default="https://essentia.upf.edu/models/classification-heads/mtg_jamendo_instrument/mtg_jamendo_instrument-discogs-effnet-1.pb")
+    instrument_classes: List[str] = Field(default=[
         "accordion",
         "acousticbassguitar",
         "acousticguitar",
@@ -49,8 +53,8 @@ class ClassifyCoreConfig(NendoConfig):
         "viola",
         "violin",
         "voice",
-    ]
-    genre_labels: List[str] = [
+    ])
+    genre_labels: List[str] = Field(default=[
         "Blues---Boogie Woogie",
         "Blues---Chicago Blues",
         "Blues---Country Blues",
@@ -451,8 +455,8 @@ class ClassifyCoreConfig(NendoConfig):
         "Stage & Screen---Score",
         "Stage & Screen---Soundtrack",
         "Stage & Screen---Theme",
-    ]
-    mood_theme_classes: List[str] = [
+    ])
+    mood_theme_classes: List[str] = Field(default=[
         "action",
         "adventure",
         "advertising",
@@ -509,4 +513,4 @@ class ClassifyCoreConfig(NendoConfig):
         "travel",
         "upbeat",
         "uplifting",
-    ]
+    ])
