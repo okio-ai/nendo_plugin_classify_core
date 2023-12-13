@@ -37,19 +37,26 @@ class ClassifyPluginTests(unittest.TestCase):
             key="key",
         )
         self.assertEqual(len(key_data), 1)
-        self.assertEqual(key_data[0].value, "D")
+        self.assertEqual(key_data[0].value, "B")
+
+        scale_data = track.get_plugin_data(
+            plugin_name="nendo_plugin_classify_core",
+            key="scale",
+        )
+        self.assertEqual(len(scale_data), 1)
+        self.assertEqual(scale_data[0].value, "minor")
 
         tempo_data = nd.library.filter_tracks(
-            filters={"tempo": (170, 180)},
+            filters={"tempo": (80, 100)},
             plugin_names=["nendo_plugin_classify_core"],
         )
         self.assertEqual(len(tempo_data), 1)
 
-        tempo_data = nd.library.filter_tracks(
-            filters={"key": "C"},
+        key_data = nd.library.filter_tracks(
+            filters={"key": "B"},
             plugin_names=["nendo_plugin_classify_core"],
         )
-        self.assertEqual(len(tempo_data), 0)
+        self.assertEqual(len(key_data), 1)
 
         instrument_data = track.get_plugin_data(
             plugin_name="nendo_plugin_classify_core",
