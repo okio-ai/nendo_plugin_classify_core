@@ -22,6 +22,9 @@ from nendo_plugin_classify_core.utils import (
 
 settings = ClassifyCoreConfig()
 
+def get_signal(track: NendoTrack) -> np.ndarray:
+    """Return the signal of the given track, cached."""
+    return track.signal[0] if track.signal.ndim == 2 else track.signal
 
 class NendoClassifyCore(NendoAnalysisPlugin):
     """A nendo plugin for music information retrieval and classification.
@@ -85,13 +88,13 @@ class NendoClassifyCore(NendoAnalysisPlugin):
     @NendoAnalysisPlugin.plugin_data
     def loudness(self, track: NendoTrack) -> dict:
         """Compute the loudness of the given track."""
-        loudness = es.Loudness()(track.signal[0])
+        loudness = es.Loudness()(get_signal(track))
         return {"loudness": loudness}
 
     @NendoAnalysisPlugin.plugin_data
     def duration(self, track: NendoTrack) -> dict:
         """Compute the duration of the given track."""
-        duration = es.Duration()(track.signal[0])
+        duration = es.Duration()(get_signal(track))
         return {"duration": duration}
 
     @NendoAnalysisPlugin.plugin_data
@@ -102,7 +105,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         If essentia runs into an error, returns 0.
         """
         try:
-            audio_signal = track.signal[0]
+            audio_signal = get_signal(track)
             # Check if the length of the audio signal is even, if not, trim it
             # This is required for the YIN algorithm to work
             if len(audio_signal) % 2 != 0:
@@ -117,31 +120,31 @@ class NendoClassifyCore(NendoAnalysisPlugin):
     def tempo(self, track: NendoTrack) -> dict:
         """Compute tempo of the given track."""
         rhythm_extractor = es.RhythmExtractor2013(method="multifeature")
-        bpm, _, _, _, _ = rhythm_extractor(track.signal[0])
+        bpm, _, _, _, _ = rhythm_extractor(get_signal(track))
         return {"tempo": bpm}
 
     @NendoAnalysisPlugin.plugin_data
     def key(self, track: NendoTrack) -> dict:
         """Compute the musical key of the given track."""
-        key, scale, strength = es.KeyExtractor()(track.signal[0])
+        key, scale, strength = es.KeyExtractor()(get_signal(track))
         return {"key": key, "scale": scale, "strength": strength}
 
     @NendoAnalysisPlugin.plugin_data
     def avg_volume(self, track: NendoTrack) -> dict:
         """Compute the average volume (interpreted as loudness) of the given track."""
-        avg_volume = np.mean(track.signal[0])
+        avg_volume = np.mean(get_signal(track))
         return {"avg_volume": avg_volume}
 
     @NendoAnalysisPlugin.plugin_data
     def intensity(self, track: NendoTrack) -> dict:
         """Compute the intensity (interpreted as energy) of the given track."""
-        intensity = es.Energy()(track.signal[0])
+        intensity = es.Energy()(get_signal(track))
         return {"intensity": intensity}
 
     @NendoAnalysisPlugin.plugin_data
     def moods(self, track: NendoTrack) -> dict:
         """Compute the moods of the given track."""
-        emb = self.embedding_model(track.signal[0])
+        emb = self.embedding_model(get_signal(track))
         predictions = self.mood_model(emb)
         filtered_labels, _ = filter_predictions(
             predictions, settings.mood_theme_classes, threshold=0.05
@@ -152,7 +155,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
     @NendoAnalysisPlugin.plugin_data
     def genres(self, track: NendoTrack) -> dict:
         """Compute the genres of the given track."""
-        emb = self.embedding_model(track.signal[0])
+        emb = self.embedding_model(get_signal(track))
         predictions = self.genre_model(emb)
         filtered_labels, _ = filter_predictions(
             predictions, settings.genre_labels, threshold=0.05
@@ -164,7 +167,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
     @NendoAnalysisPlugin.plugin_data
     def instruments(self, track: NendoTrack) -> dict:
         """Compute the instruments of the given track."""
-        emb = self.embedding_model(track.signal[0])
+        emb = self.embedding_model(get_signal(track))
         predictions = self.instrument_model(emb)
         filtered_labels, _ = filter_predictions(
             predictions, settings.instrument_classes, threshold=0.05
