@@ -1,29 +1,30 @@
 # -*- encoding: utf-8 -*-
 """Music Information Retrieval Classification Plugin for the Nendo framework."""
 from functools import lru_cache
+from typing import Any
 
 import essentia.standard as es
+import essentia
+
+# Suppress Essentia warnings
+essentia.log.infoActive = False
+essentia.log.warningActive = False
 import numpy as np
+import os
 from nendo import Nendo, NendoAnalysisPlugin, NendoConfig, NendoTrack
 
+from nendo_plugin_classify_core.config import ClassifyCoreConfig
+from nendo_plugin_classify_core.utils import (
+    download_model,
+    filter_predictions,
+    make_comma_separated_unique,
+)
 
-@lru_cache
-def signal(file_path: str) -> dict:
-    """Load the track using essentia and save signal and sr.
+settings = ClassifyCoreConfig()
 
-    Caches the result to avoid reloading the same file multiple times.
-
-    Args:
-        file_path (str): Path to the audio file.
-
-    Returns:
-        dict: Dictionary containing the signal and sample rate.
-
-    """
-    signal = es.MonoLoader(filename=file_path)()
-    sr = 44100  # Essentia works with this sample rate
-    return {"signal": signal, "sr": sr}
-
+def get_signal(track: NendoTrack) -> np.ndarray:
+    """Return the signal of the given track, cached."""
+    return track.signal[0] if track.signal.ndim == 2 else track.signal
 
 class NendoClassifyCore(NendoAnalysisPlugin):
     """A nendo plugin for music information retrieval and classification.
@@ -54,17 +55,46 @@ class NendoClassifyCore(NendoAnalysisPlugin):
 
     nendo_instance: Nendo
     config: NendoConfig = None
+    embedding_model: es.TensorflowPredictEffnetDiscogs = None
+    mood_model: es.TensorflowPredict2D = None
+    genre_model: es.TensorflowPredict2D = None
+    instrument_model: es.TensorflowPredict2D = None
+
+    def __init__(self, **data: Any):
+        """Initialize plugin."""
+        super().__init__(**data)
+
+        if not os.path.isfile("models"):
+            os.makedirs("models", exist_ok=True)
+
+        for model in ["embedding", "mood", "genre", "instrument"]:
+            model_path = f"models/{model}.pb"
+            if not os.path.isfile(model_path):
+                download_model(getattr(settings, f"{model}_model"), model_path)
+
+        self.embedding_model = es.TensorflowPredictEffnetDiscogs(
+            graphFilename="models/embedding.pb", output="PartitionedCall:1"
+        )
+        self.mood_model = es.TensorflowPredict2D(graphFilename="models/mood.pb")
+        self.genre_model = es.TensorflowPredict2D(
+            graphFilename="models/genre.pb",
+            input="serving_default_model_Placeholder",
+            output="PartitionedCall:0",
+        )
+        self.instrument_model = es.TensorflowPredict2D(
+            graphFilename="models/instrument.pb"
+        )
 
     @NendoAnalysisPlugin.plugin_data
     def loudness(self, track: NendoTrack) -> dict:
         """Compute the loudness of the given track."""
-        loudness = es.Loudness()(signal(track.resource.src)["signal"])
+        loudness = es.Loudness()(get_signal(track))
         return {"loudness": loudness}
 
     @NendoAnalysisPlugin.plugin_data
     def duration(self, track: NendoTrack) -> dict:
         """Compute the duration of the given track."""
-        duration = es.Duration()(signal(track.resource.src)["signal"])
+        duration = es.Duration()(get_signal(track))
         return {"duration": duration}
 
     @NendoAnalysisPlugin.plugin_data
@@ -75,8 +105,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         If essentia runs into an error, returns 0.
         """
         try:
-            audio_signal = signal(track.resource.src)["signal"]
-
+            audio_signal = get_signal(track)
             # Check if the length of the audio signal is even, if not, trim it
             # This is required for the YIN algorithm to work
             if len(audio_signal) % 2 != 0:
@@ -91,26 +120,59 @@ class NendoClassifyCore(NendoAnalysisPlugin):
     def tempo(self, track: NendoTrack) -> dict:
         """Compute tempo of the given track."""
         rhythm_extractor = es.RhythmExtractor2013(method="multifeature")
-        bpm, _, _, _, _ = rhythm_extractor(signal(track.resource.src)["signal"])
+        bpm, _, _, _, _ = rhythm_extractor(get_signal(track))
         return {"tempo": bpm}
 
     @NendoAnalysisPlugin.plugin_data
     def key(self, track: NendoTrack) -> dict:
         """Compute the musical key of the given track."""
-        key, scale, strength = es.KeyExtractor()(signal(track.resource.src)["signal"])
+        key, scale, strength = es.KeyExtractor()(get_signal(track))
         return {"key": key, "scale": scale, "strength": strength}
 
     @NendoAnalysisPlugin.plugin_data
     def avg_volume(self, track: NendoTrack) -> dict:
         """Compute the average volume (interpreted as loudness) of the given track."""
-        avg_volume = np.mean(signal(track.resource.src)["signal"])
+        avg_volume = np.mean(get_signal(track))
         return {"avg_volume": avg_volume}
 
     @NendoAnalysisPlugin.plugin_data
     def intensity(self, track: NendoTrack) -> dict:
         """Compute the intensity (interpreted as energy) of the given track."""
-        intensity = es.Energy()(signal(track.resource.src)["signal"])
+        intensity = es.Energy()(get_signal(track))
         return {"intensity": intensity}
+
+    @NendoAnalysisPlugin.plugin_data
+    def moods(self, track: NendoTrack) -> dict:
+        """Compute the moods of the given track."""
+        emb = self.embedding_model(get_signal(track))
+        predictions = self.mood_model(emb)
+        filtered_labels, _ = filter_predictions(
+            predictions, settings.mood_theme_classes, threshold=0.05
+        )
+        moods = make_comma_separated_unique(filtered_labels)
+        return {"moods": moods}
+
+    @NendoAnalysisPlugin.plugin_data
+    def genres(self, track: NendoTrack) -> dict:
+        """Compute the genres of the given track."""
+        emb = self.embedding_model(get_signal(track))
+        predictions = self.genre_model(emb)
+        filtered_labels, _ = filter_predictions(
+            predictions, settings.genre_labels, threshold=0.05
+        )
+        filtered_labels = ", ".join(filtered_labels).replace("---", ", ").split(", ")
+        genres = make_comma_separated_unique(filtered_labels)
+        return {"genres": genres}
+
+    @NendoAnalysisPlugin.plugin_data
+    def instruments(self, track: NendoTrack) -> dict:
+        """Compute the instruments of the given track."""
+        emb = self.embedding_model(get_signal(track))
+        predictions = self.instrument_model(emb)
+        filtered_labels, _ = filter_predictions(
+            predictions, settings.instrument_classes, threshold=0.05
+        )
+        return {"instruments": filtered_labels[0]}
 
     @NendoAnalysisPlugin.run_track
     def classify(self, track: NendoTrack) -> None:
@@ -126,3 +188,6 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         self.tempo(track)
         self.intensity(track)
         self.key(track)
+        self.moods(track)
+        self.genres(track)
+        self.instruments(track)
