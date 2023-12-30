@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
 """Music Information Retrieval Classification Plugin for the Nendo framework."""
-from functools import lru_cache
 from typing import Any
 
 import essentia.standard as es
@@ -55,10 +54,10 @@ class NendoClassifyCore(NendoAnalysisPlugin):
 
     nendo_instance: Nendo
     config: NendoConfig = None
-    embedding_model: es.TensorflowPredictEffnetDiscogs = None
-    mood_model: es.TensorflowPredict2D = None
-    genre_model: es.TensorflowPredict2D = None
-    instrument_model: es.TensorflowPredict2D = None
+    embedding_model: Any = None
+    mood_model: Any = None
+    genre_model: Any = None
+    instrument_model: Any = None
 
     def __init__(self, **data: Any):
         """Initialize plugin."""
