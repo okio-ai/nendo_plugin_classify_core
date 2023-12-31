@@ -35,8 +35,7 @@ classifiers = [
 python = "^3.8,<3.11"
 pydantic = { version = "^2.0.0, <2.5.0" }
 nendo = "^0.1.2"
-essentia = "^2.1b6.dev1034"
-essentia-tensorflow= "^2.1b6.dev1110"
+essentia-tensorflow = "^2.1b6.dev1110"
 tqdm = "^4.65.0"
 
 [tool.poetry.group.lint.dependencies]
