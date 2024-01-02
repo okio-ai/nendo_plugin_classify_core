@@ -19,17 +19,6 @@ Automatic music information retrieval (based on [essentia](https://essentia.upf.
 - Use descriptive features to filter, search and sort your library
 - Extract rich features to annotate datasets for training custom models
 
-## Requirements
-
-This plugin requires `tensorflow`. Please install it [as explained in its official documentation](https://www.tensorflow.org/install/pip):
-
-```bash
-# For GPU users
-pip install tensorflow[and-cuda]
-# For CPU users
-pip install tensorflow
-```
-
 ## Installation
 
 1. [Install nendo](https://github.com/okio-ai/nendo#installation)
