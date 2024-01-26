@@ -58,6 +58,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
     mood_model: es.TensorflowPredict2D = None
     genre_model: es.TensorflowPredict2D = None
     instrument_model: es.TensorflowPredict2D = None
+    sfx_model: es.TensorflowPredict2D = None
 
     def __init__(self, **data: Any):
         """Initialize plugin."""
@@ -66,7 +67,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         if not os.path.isfile("models"):
             os.makedirs("models", exist_ok=True)
 
-        for model in ["embedding", "mood", "genre", "instrument"]:
+        for model in ["embedding", "mood", "genre", "instrument", "sfx"]:
             model_path = f"models/{model}.pb"
             if not os.path.isfile(model_path):
                 download_model(getattr(settings, f"{model}_model"), model_path)
@@ -82,6 +83,11 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         )
         self.instrument_model = es.TensorflowPredict2D(
             graphFilename="models/instrument.pb"
+        )
+        self.sfx_model = es.TensorflowPredictVGGish(
+            graphFilename="models/sfx.pb",
+            input="melspectrogram",
+            output="activations",
         )
 
     @NendoAnalysisPlugin.plugin_data
@@ -173,6 +179,18 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         )
         return {"instruments": filtered_labels[0]}
 
+    @NendoAnalysisPlugin.plugin_data
+    def sfx(self, track: NendoTrack) -> dict:
+        """Compute the sfx of the given track."""
+        emb = self.embedding_model(get_signal(track))
+        predictions = self.sfx_model(emb)
+        filtered_labels, _ = filter_predictions(
+            predictions, settings.sfx_classes, threshold=0.01
+        )
+        filtered_labels = [label for label in filtered_labels if label not in ["Music", "Electronic music"]]
+        result = ', '.join(filtered_labels)
+        return {"sfx": result}
+
     @NendoAnalysisPlugin.run_track
     def classify(self, track: NendoTrack) -> None:
         """Run the core classification plugin on the given track and extract all possible features.
@@ -190,3 +208,4 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         self.moods(track)
         self.genres(track)
         self.instruments(track)
+        self.sfx(track)
