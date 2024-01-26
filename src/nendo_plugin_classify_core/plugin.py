@@ -177,7 +177,8 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         filtered_labels, _ = filter_predictions(
             predictions, settings.instrument_classes, threshold=0.05
         )
-        return {"instruments": filtered_labels[0]}
+        instruments = make_comma_separated_unique(filtered_labels)
+        return {"instruments": instruments}
 
     @NendoAnalysisPlugin.plugin_data
     def sfx(self, track: NendoTrack) -> dict:
@@ -188,8 +189,8 @@ class NendoClassifyCore(NendoAnalysisPlugin):
             predictions, settings.sfx_classes, threshold=0.01
         )
         filtered_labels = [label for label in filtered_labels if label not in ["Music", "Electronic music"]]
-        result = ', '.join(filtered_labels)
-        return {"sfx": result}
+        sfx = make_comma_separated_unique(filtered_labels)
+        return {"sfx": sfx}
 
     @NendoAnalysisPlugin.run_track
     def classify(self, track: NendoTrack) -> None:
