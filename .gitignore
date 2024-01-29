@@ -135,5 +135,7 @@ dmypy.json
 .vscode/
 .idea/
 library/
+models/
+nendo_library/
 
 poetry.lock

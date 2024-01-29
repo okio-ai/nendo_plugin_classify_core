@@ -29,7 +29,7 @@ class ClassifyPluginTests(unittest.TestCase):
     def _assert(self, track: NendoTrack):
         self.assertEqual(
             len(track.get_plugin_data(plugin_name="nendo_plugin_classify_core")),
-            12,
+            13,
         )
 
         key_data = track.get_plugin_data(
@@ -75,6 +75,12 @@ class ClassifyPluginTests(unittest.TestCase):
             key="moods",
         )
         self.assertIn("slow", mood_data[0].value)
+
+        sfx_data = track.get_plugin_data(
+            plugin_name="nendo_plugin_classify_core",
+            key="sfx",
+        )
+        self.assertIn("Choir", sfx_data[0].value)
 
 
 if __name__ == "__main__":

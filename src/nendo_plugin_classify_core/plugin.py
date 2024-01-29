@@ -1,23 +1,23 @@
 # -*- encoding: utf-8 -*-
 """Music Information Retrieval Classification Plugin for the Nendo framework."""
+import os
 from typing import Any
 
-import essentia.standard as es
 import essentia
-
-# Suppress Essentia warnings
-essentia.log.infoActive = False
-essentia.log.warningActive = False
+import essentia.standard as es
 import numpy as np
-import os
-from nendo import Nendo, NendoAnalysisPlugin, NendoConfig, NendoTrack
 
+from nendo import Nendo, NendoAnalysisPlugin, NendoConfig, NendoTrack
 from nendo_plugin_classify_core.config import ClassifyCoreConfig
 from nendo_plugin_classify_core.utils import (
     download_model,
     filter_predictions,
     make_comma_separated_unique,
 )
+
+# Suppress Essentia warnings
+essentia.log.infoActive = False
+essentia.log.warningActive = False
 
 settings = ClassifyCoreConfig()
 
@@ -72,7 +72,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
                 download_model(getattr(settings, f"{model}_model"), model_path)
 
         self.embedding_model = es.TensorflowPredictEffnetDiscogs(
-            graphFilename="models/embedding.pb", output="PartitionedCall:1"
+            graphFilename="models/embedding.pb", output="PartitionedCall:1",
         )
         self.mood_model = es.TensorflowPredict2D(graphFilename="models/mood.pb")
         self.genre_model = es.TensorflowPredict2D(
@@ -81,7 +81,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
             output="PartitionedCall:0",
         )
         self.instrument_model = es.TensorflowPredict2D(
-            graphFilename="models/instrument.pb"
+            graphFilename="models/instrument.pb",
         )
 
     @NendoAnalysisPlugin.plugin_data
@@ -93,7 +93,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
     @NendoAnalysisPlugin.plugin_data
     def duration(self, track: NendoTrack) -> dict:
         """Compute the duration of the given track."""
-        duration = es.Duration()(get_signal(track))
+        duration = round(es.Duration()(get_signal(track)), 3)
         return {"duration": duration}
 
     @NendoAnalysisPlugin.plugin_data
@@ -146,7 +146,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         emb = self.embedding_model(get_signal(track))
         predictions = self.mood_model(emb)
         filtered_labels, _ = filter_predictions(
-            predictions, settings.mood_theme_classes, threshold=0.05
+            predictions, settings.mood_theme_classes, threshold=0.05,
         )
         moods = make_comma_separated_unique(filtered_labels)
         return {"moods": moods}
@@ -157,7 +157,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         emb = self.embedding_model(get_signal(track))
         predictions = self.genre_model(emb)
         filtered_labels, _ = filter_predictions(
-            predictions, settings.genre_labels, threshold=0.05
+            predictions, settings.genre_labels, threshold=0.05,
         )
         filtered_labels = ", ".join(filtered_labels).replace("---", ", ").split(", ")
         genres = make_comma_separated_unique(filtered_labels)
@@ -169,7 +169,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         emb = self.embedding_model(get_signal(track))
         predictions = self.instrument_model(emb)
         filtered_labels, _ = filter_predictions(
-            predictions, settings.instrument_classes, threshold=0.05
+            predictions, settings.instrument_classes, threshold=0.05,
         )
         return {"instruments": filtered_labels[0]}
 
