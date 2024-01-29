@@ -185,7 +185,9 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         """Compute the sfx of the given track."""
         # SR=16000 as recommended in the essentia documentation
         # https://essentia.upf.edu/reference/std_TensorflowPredictVGGish.html
-        signal = es.MonoLoader(filename=track.resource.src, sampleRate=16000)()
+        track_copy = track.copy()
+        signal = track_copy.resample(16000)
+        signal = signal[0] if signal.ndim == 2 else signal
         predictions = self.sfx_model(signal)
         filtered_labels, _ = filter_predictions(
             predictions, settings.sfx_classes, threshold=0.01
