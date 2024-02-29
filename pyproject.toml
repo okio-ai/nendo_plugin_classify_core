@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nendo-plugin-classify-core"
-version = "0.2.8"
+version = "0.2.9"
 authors = [
   "Felix Lorenz <felix@okio.ai>",
   "Aaron Abebe <aaron@okio.ai>",
