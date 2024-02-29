@@ -75,19 +75,19 @@ class NendoClassifyCore(NendoAnalysisPlugin):
                 download_model(getattr(settings, f"{model}_model"), model_path)
 
         self.embedding_model = es.TensorflowPredictEffnetDiscogs(
-            graphFilename="models/embedding.pb", output="PartitionedCall:1",
+            graphFilename=os.path.join(model_dir, "embedding.pb"), output="PartitionedCall:1",
         )
         self.mood_model = es.TensorflowPredict2D(graphFilename="models/mood.pb")
         self.genre_model = es.TensorflowPredict2D(
-            graphFilename="models/genre.pb",
+            graphFilename=os.path.join(model_dir, "genre.pb"),
             input="serving_default_model_Placeholder",
             output="PartitionedCall:0",
         )
         self.instrument_model = es.TensorflowPredict2D(
-            graphFilename="models/instrument.pb",
+            graphFilename=os.path.join(model_dir, "instrument.pb"),
         )
         self.sfx_model = es.TensorflowPredictVGGish(
-            graphFilename="models/sfx.pb",
+            graphFilename=os.path.join(model_dir, "sfx.pb"),
             input="melspectrogram",
             output="activations",
         )
