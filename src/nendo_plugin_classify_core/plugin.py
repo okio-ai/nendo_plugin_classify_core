@@ -77,7 +77,9 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         self.embedding_model = es.TensorflowPredictEffnetDiscogs(
             graphFilename=os.path.join(model_dir, "embedding.pb"), output="PartitionedCall:1",
         )
-        self.mood_model = es.TensorflowPredict2D(graphFilename="models/mood.pb")
+        self.mood_model = es.TensorflowPredict2D(
+            graphFilename=os.path.join(model_dir, "mood.pb")
+        )
         self.genre_model = es.TensorflowPredict2D(
             graphFilename=os.path.join(model_dir, "genre.pb"),
             input="serving_default_model_Placeholder",
