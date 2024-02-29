@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 """Music Information Retrieval Classification Plugin for the Nendo framework."""
 import os
+from pathlib import Path
 from typing import Any
 
 import essentia
@@ -64,11 +65,12 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         """Initialize plugin."""
         super().__init__(**data)
 
-        if not os.path.isfile("models"):
-            os.makedirs("models", exist_ok=True)
+        model_dir = os.path.join(Path.home(), ".cache", "nendo", "models")
+        if not os.path.isdir(model_dir):
+            os.makedirs(model_dir, exist_ok=True)
 
         for model in ["embedding", "mood", "genre", "instrument", "sfx"]:
-            model_path = f"models/{model}.pb"
+            model_path = os.path.join(model_dir, f"{model}.pb")
             if not os.path.isfile(model_path):
                 download_model(getattr(settings, f"{model}_model"), model_path)
 
