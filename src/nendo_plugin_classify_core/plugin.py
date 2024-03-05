@@ -94,19 +94,19 @@ class NendoClassifyCore(NendoAnalysisPlugin):
             output="activations",
         )
 
-    @NendoAnalysisPlugin.plugin_data
+    @NendoAnalysisPlugin.plugin_data("loudness")
     def loudness(self, track: NendoTrack) -> dict:
         """Compute the loudness of the given track."""
         loudness = es.Loudness()(get_signal(track))
         return {"loudness": loudness}
 
-    @NendoAnalysisPlugin.plugin_data
+    @NendoAnalysisPlugin.plugin_data("duration")
     def duration(self, track: NendoTrack) -> dict:
         """Compute the duration of the given track."""
         duration = round(es.Duration()(get_signal(track)), 3)
         return {"duration": duration}
 
-    @NendoAnalysisPlugin.plugin_data
+    @NendoAnalysisPlugin.plugin_data("frequency")
     def frequency(self, track: NendoTrack) -> dict:
         """Compute average frequency of the given track.
 
@@ -125,32 +125,32 @@ class NendoClassifyCore(NendoAnalysisPlugin):
             pitch = 0
         return {"frequency": pitch}
 
-    @NendoAnalysisPlugin.plugin_data
+    @NendoAnalysisPlugin.plugin_data("tempo")
     def tempo(self, track: NendoTrack) -> dict:
         """Compute tempo of the given track."""
         rhythm_extractor = es.RhythmExtractor2013(method="multifeature")
         bpm, _, _, _, _ = rhythm_extractor(get_signal(track))
         return {"tempo": bpm}
 
-    @NendoAnalysisPlugin.plugin_data
+    @NendoAnalysisPlugin.plugin_data("key", "scale", "strength")
     def key(self, track: NendoTrack) -> dict:
         """Compute the musical key of the given track."""
         key, scale, strength = es.KeyExtractor()(get_signal(track))
         return {"key": key, "scale": scale, "strength": strength}
 
-    @NendoAnalysisPlugin.plugin_data
+    @NendoAnalysisPlugin.plugin_data("avg_volume")
     def avg_volume(self, track: NendoTrack) -> dict:
         """Compute the average volume (interpreted as loudness) of the given track."""
         avg_volume = np.mean(get_signal(track))
         return {"avg_volume": avg_volume}
 
-    @NendoAnalysisPlugin.plugin_data
+    @NendoAnalysisPlugin.plugin_data("intensity")
     def intensity(self, track: NendoTrack) -> dict:
         """Compute the intensity (interpreted as energy) of the given track."""
         intensity = es.Energy()(get_signal(track))
         return {"intensity": intensity}
 
-    @NendoAnalysisPlugin.plugin_data
+    @NendoAnalysisPlugin.plugin_data("mooods")
     def moods(self, track: NendoTrack) -> dict:
         """Compute the moods of the given track."""
         emb = self.embedding_model(get_signal(track))
@@ -161,7 +161,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         moods = make_comma_separated_unique(filtered_labels)
         return {"moods": moods}
 
-    @NendoAnalysisPlugin.plugin_data
+    @NendoAnalysisPlugin.plugin_data("genres")
     def genres(self, track: NendoTrack) -> dict:
         """Compute the genres of the given track."""
         emb = self.embedding_model(get_signal(track))
@@ -173,7 +173,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         genres = make_comma_separated_unique(filtered_labels)
         return {"genres": genres}
 
-    @NendoAnalysisPlugin.plugin_data
+    @NendoAnalysisPlugin.plugin_data("instruments")
     def instruments(self, track: NendoTrack) -> dict:
         """Compute the instruments of the given track."""
         emb = self.embedding_model(get_signal(track))
@@ -184,7 +184,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         instruments = make_comma_separated_unique(filtered_labels)
         return {"instruments": instruments}
 
-    @NendoAnalysisPlugin.plugin_data
+    @NendoAnalysisPlugin.plugin_data("sfx")
     def sfx(self, track: NendoTrack) -> dict:
         """Compute the sfx of the given track."""
         # SR=16000 as recommended in the essentia documentation

@@ -6,7 +6,7 @@ from nendo import Nendo, NendoConfig, NendoTrack
 
 nd = Nendo(
     config=NendoConfig(
-        log_level="INFO",
+        log_level="DEBUG",
         max_threads=1,
         plugins=["nendo_plugin_classify_core"],
     ),
