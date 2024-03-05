@@ -4,7 +4,7 @@ from distutils.core import setup
 if __name__ == "__main__":
     setup(
         name="nendo-plugin-classify-core",
-        version="0.2.9",
+        version="0.2.10",
         description="Nendo core classification plugin",
         author="Okio Team <team@okio.ai>",
     )
