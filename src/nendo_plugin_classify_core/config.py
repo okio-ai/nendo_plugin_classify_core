@@ -8,6 +8,7 @@ from pydantic import Field
 class ClassifyCoreConfig(NendoConfig):
     """Configuration class for the nendo classifier plugin."""
 
+    max_trim_duration: float = Field(default=600.0)
     embedding_model: str = Field(default="https://essentia.upf.edu/models/feature-extractors/discogs-effnet/discogs-effnet-bs64-1.pb")
     mood_model: str = Field(default="https://essentia.upf.edu/models/classification-heads/mtg_jamendo_moodtheme/mtg_jamendo_moodtheme-discogs-effnet-1.pb")
     genre_model: str = Field(default="https://essentia.upf.edu/models/classification-heads/genre_discogs400/genre_discogs400-discogs-effnet-1.pb")
