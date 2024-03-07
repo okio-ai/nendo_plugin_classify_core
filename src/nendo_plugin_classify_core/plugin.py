@@ -23,8 +23,17 @@ essentia.log.warningActive = False
 settings = ClassifyCoreConfig()
 
 def get_signal(track: NendoTrack) -> np.ndarray:
-    """Return the signal of the given track, cached."""
+    """Return the signal of the given track."""
     return track.signal[0] if track.signal.ndim == 2 else track.signal
+
+def get_trimmed_signal(track: NendoTrack) -> np.ndarray:
+    """Return the signal of the given track, trimmed to 10 minutes."""
+    signal = get_signal(track)
+    duration = round(es.Duration()(signal), 3)
+    if duration > settings.max_trim_duration:
+        return signal[:int(settings.max_trim_duration * track.sr)]
+    else:
+        return signal
 
 class NendoClassifyCore(NendoAnalysisPlugin):
     """A nendo plugin for music information retrieval and classification.
@@ -114,7 +123,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         If essentia runs into an error, returns 0.
         """
         try:
-            audio_signal = get_signal(track)
+            audio_signal = get_trimmed_signal(track)
             # Check if the length of the audio signal is even, if not, trim it
             # This is required for the YIN algorithm to work
             if len(audio_signal) % 2 != 0:
@@ -153,7 +162,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
     @NendoAnalysisPlugin.plugin_data("mooods")
     def moods(self, track: NendoTrack) -> dict:
         """Compute the moods of the given track."""
-        emb = self.embedding_model(get_signal(track))
+        emb = self.embedding_model(get_trimmed_signal(track))
         predictions = self.mood_model(emb)
         filtered_labels, _ = filter_predictions(
             predictions, settings.mood_theme_classes, threshold=0.05,
@@ -164,7 +173,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
     @NendoAnalysisPlugin.plugin_data("genres")
     def genres(self, track: NendoTrack) -> dict:
         """Compute the genres of the given track."""
-        emb = self.embedding_model(get_signal(track))
+        emb = self.embedding_model(get_trimmed_signal(track))
         predictions = self.genre_model(emb)
         filtered_labels, _ = filter_predictions(
             predictions, settings.genre_labels, threshold=0.05,
@@ -176,7 +185,7 @@ class NendoClassifyCore(NendoAnalysisPlugin):
     @NendoAnalysisPlugin.plugin_data("instruments")
     def instruments(self, track: NendoTrack) -> dict:
         """Compute the instruments of the given track."""
-        emb = self.embedding_model(get_signal(track))
+        emb = self.embedding_model(get_trimmed_signal(track))
         predictions = self.instrument_model(emb)
         filtered_labels, _ = filter_predictions(
             predictions, settings.instrument_classes, threshold=0.05,
@@ -192,6 +201,9 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         track_copy = track.copy()
         signal = track_copy.resample(16000)
         signal = signal[0] if signal.ndim == 2 else signal
+        duration = round(es.Duration()(signal), 3)
+        if duration > settings.max_trim_duration:
+            signal = signal[:int(settings.max_trim_duration * track.sr)]
         predictions = self.sfx_model(signal)
         filtered_labels, _ = filter_predictions(
             predictions, settings.sfx_classes, threshold=0.01
@@ -207,9 +219,9 @@ class NendoClassifyCore(NendoAnalysisPlugin):
         Args:
             track (NendoTrack): The track to run the plugin on.
         """
+        self.duration(track)
         self.loudness(track)
         self.avg_volume(track)
-        self.duration(track)
         self.frequency(track)
         self.tempo(track)
         self.intensity(track)
